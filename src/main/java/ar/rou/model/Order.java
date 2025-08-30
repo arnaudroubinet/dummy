@@ -5,7 +5,6 @@ import java.util.List;
 
 public class Order {
     private Long id;
-    private Long userId;
     private List<Long> productIds;
     private String status;
     private LocalDateTime createdAt;
@@ -13,9 +12,8 @@ public class Order {
     public Order() {
     }
 
-    public Order(Long id, Long userId, List<Long> productIds, String status, LocalDateTime createdAt) {
+    public Order(Long id, List<Long> productIds, String status, LocalDateTime createdAt) {
         this.id = id;
-        this.userId = userId;
         this.productIds = productIds;
         this.status = status;
         this.createdAt = createdAt;
@@ -27,14 +25,6 @@ public class Order {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
     }
 
     public List<Long> getProductIds() {
