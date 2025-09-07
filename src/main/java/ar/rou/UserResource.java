@@ -1,5 +1,6 @@
 package ar.rou;
 
+import ar.rou.model.Preferences;
 import ar.rou.model.User;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -38,8 +39,34 @@ public class UserResource {
 
     @POST
     public Response createUser(User user) {
+        // Input validation (DEMO-102)
+        if (user.getEmail() == null || !user.getEmail().contains("@")) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                .entity("{\"error\":\"Invalid email address\"}")
+                .build();
+        }
+        if (user.getName() == null || user.getName().trim().isEmpty()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                .entity("{\"error\":\"Name is required\"}")
+                .build();
+        }
+        
         // Dummy implementation - just return the user with a generated ID
         user.setId(99L);
         return Response.status(Response.Status.CREATED).entity(user).build();
+    }
+    
+    @GET
+    @Path("/{id}/preferences")
+    public Response getUserPreferences(@PathParam("id") Long id) {
+        if (id == 1L) {
+            return Response.ok(new Preferences("dark", true)).build();
+        } else if (id == 2L) {
+            return Response.ok(new Preferences("light", false)).build();
+        } else if (id == 3L) {
+            return Response.ok(new Preferences("light", true)).build();
+        } else {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
     }
 }

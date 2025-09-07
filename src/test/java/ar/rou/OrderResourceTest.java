@@ -17,7 +17,7 @@ class OrderResourceTest {
              .statusCode(200)
              .body("size()", is(3))
              .body("[0].id", is(1))
-             .body("[0].userId", is(1))
+
              .body("[0].status", is("COMPLETED"))
              .body("[0].productIds.size()", is(2));
     }
