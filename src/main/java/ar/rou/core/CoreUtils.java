@@ -1,6 +1,6 @@
-package ar.rou.legacy;
+package ar.rou.core;
 
-public class Utils {
+public class CoreUtils {
     
     public static String formatUserName(String firstName, String lastName) {
         if (firstName == null && lastName == null) {
