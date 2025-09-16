@@ -2,6 +2,7 @@ package ar.rou.confluence;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
@@ -19,6 +20,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,23 +42,29 @@ public class ConfluenceUploader {
     private final String username;
     private final String apiToken;
     private final String spaceKey;
+    private final String branchName;
+    private final String repositoryUrl;
+    private final String commitHash;
     private final CloseableHttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final String authHeader;
     
-    public ConfluenceUploader(String confluenceUrl, String username, String apiToken, String spaceKey) {
+    public ConfluenceUploader(String confluenceUrl, String username, String apiToken, String spaceKey, String branchName, String repositoryUrl, String commitHash) {
         this.confluenceUrl = confluenceUrl.endsWith("/") ? confluenceUrl : confluenceUrl + "/";
         this.username = username;
         this.apiToken = apiToken;
         this.spaceKey = spaceKey;
+        this.branchName = branchName;
+        this.repositoryUrl = repositoryUrl;
+        this.commitHash = commitHash;
         this.httpClient = HttpClients.createDefault();
         this.objectMapper = new ObjectMapper();
         this.authHeader = "Basic " + Base64.getEncoder().encodeToString((username + ":" + apiToken).getBytes());
     }
     
     public static void main(String[] args) {
-        if (args.length != 4) {
-            System.err.println("Usage: ConfluenceUploader <confluenceUrl> <username> <apiToken> <spaceKey>");
+        if (args.length != 7) {
+            System.err.println("Usage: ConfluenceUploader <confluenceUrl> <username> <apiToken> <spaceKey> <branchName> <repositoryUrl> <commitHash>");
             System.exit(1);
         }
         
@@ -63,9 +72,12 @@ public class ConfluenceUploader {
         String username = args[1];
         String apiToken = args[2];
         String spaceKey = args[3];
+        String branchName = args[4];
+        String repositoryUrl = args[5];
+        String commitHash = args[6];
         
         try {
-            ConfluenceUploader uploader = new ConfluenceUploader(confluenceUrl, username, apiToken, spaceKey);
+            ConfluenceUploader uploader = new ConfluenceUploader(confluenceUrl, username, apiToken, spaceKey, branchName, repositoryUrl, commitHash);
             uploader.uploadDocumentation();
             uploader.close();
             System.out.println("Documentation upload completed successfully");
@@ -205,12 +217,15 @@ public class ConfluenceUploader {
         String adfContent = Files.readString(adfFile.toPath());
         JsonNode adfDocument = objectMapper.readTree(adfContent);
         
-        // Replace image references with Confluence attachments
-        JsonNode processedAdf = replaceImageReferences(adfDocument, diagramAttachments);
+        // Add metadata header to the document
+        JsonNode processedAdf = addMetadataHeader(adfDocument);
         
-        // Create page title from filename
-        String pageTitle = adfFile.getName().replace(".json", "").replace("_", " ");
-        pageTitle = pageTitle.substring(0, 1).toUpperCase() + pageTitle.substring(1);
+        // Replace image references with Confluence attachments
+        processedAdf = replaceImageReferences(processedAdf, diagramAttachments);
+        
+        // Use branch name as page title
+        String pageTitle = branchName + " - " + adfFile.getName().replace(".json", "").replace("_", " ");
+        pageTitle = formatPageTitle(pageTitle);
         
         // Check if page exists
         String existingPageId = findPageByTitle(pageTitle);
@@ -220,6 +235,77 @@ public class ConfluenceUploader {
         } else {
             createPage(pageTitle, processedAdf);
         }
+    }
+    
+    private JsonNode addMetadataHeader(JsonNode adfDocument) {
+        // Create metadata paragraph
+        ObjectNode metadataParagraph = objectMapper.createObjectNode();
+        metadataParagraph.put("type", "paragraph");
+        
+        ArrayNode metadataContent = metadataParagraph.putArray("content");
+        
+        // Add repository URL
+        ObjectNode repoLink = metadataContent.addObject();
+        repoLink.put("type", "text");
+        repoLink.put("text", "Repository: " + repositoryUrl);
+        ArrayNode repoMarks = repoLink.putArray("marks");
+        ObjectNode linkMark = repoMarks.addObject();
+        linkMark.put("type", "link");
+        ObjectNode linkAttrs = linkMark.putObject("attrs");
+        linkAttrs.put("href", repositoryUrl);
+        
+        // Add line break
+        ObjectNode lineBreak1 = metadataContent.addObject();
+        lineBreak1.put("type", "hardBreak");
+        
+        // Add commit hash
+        ObjectNode commitText = metadataContent.addObject();
+        commitText.put("type", "text");
+        commitText.put("text", "Commit: " + commitHash);
+        ArrayNode commitMarks = commitText.putArray("marks");
+        ObjectNode codeMark = commitMarks.addObject();
+        codeMark.put("type", "code");
+        
+        // Add line break
+        ObjectNode lineBreak2 = metadataContent.addObject();
+        lineBreak2.put("type", "hardBreak");
+        
+        // Add generation date
+        ObjectNode dateText = metadataContent.addObject();
+        dateText.put("type", "text");
+        String generationDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        dateText.put("text", "Generated: " + generationDate);
+        ArrayNode dateMarks = dateText.putArray("marks");
+        ObjectNode emMark = dateMarks.addObject();
+        emMark.put("type", "em");
+        
+        // Clone the original document and prepend metadata
+        ObjectNode newDocument = adfDocument.deepCopy();
+        ArrayNode content = (ArrayNode) newDocument.get("content");
+        
+        // Insert metadata at the beginning
+        content.insert(0, metadataParagraph);
+        
+        // Add a divider after metadata
+        ObjectNode divider = objectMapper.createObjectNode();
+        divider.put("type", "rule");
+        content.insert(1, divider);
+        
+        return newDocument;
+    }
+    
+    private String formatPageTitle(String title) {
+        // Capitalize first letter and format nicely
+        if (title == null || title.trim().isEmpty()) {
+            return "Documentation";
+        }
+        
+        String formatted = title.trim();
+        if (formatted.length() > 0) {
+            formatted = formatted.substring(0, 1).toUpperCase() + formatted.substring(1);
+        }
+        
+        return formatted;
     }
     
     private JsonNode replaceImageReferences(JsonNode adfDocument, Map<String, String> diagramAttachments) {

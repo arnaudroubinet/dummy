@@ -49,10 +49,13 @@ upload_confluence:
   stage: upload
   image: openjdk:17-slim
   before_script:
-    - apt-get update && apt-get install -y maven
+    - apt-get update && apt-get install -y maven git
   script:
+    - export GIT_BRANCH=${CI_COMMIT_REF_NAME}
+    - export GIT_COMMIT=${CI_COMMIT_SHA}
+    - export REPO_URL=${CI_PROJECT_URL}
     - mvn compile exec:java -Dexec.mainClass="ar.rou.confluence.ConfluenceUploader"
-      -Dexec.args="$CONFLUENCE_URL $CONFLUENCE_USERNAME $CONFLUENCE_API_TOKEN $CONFLUENCE_SPACE_KEY"
+      -Dexec.args="$CONFLUENCE_URL $CONFLUENCE_USERNAME $CONFLUENCE_API_TOKEN $CONFLUENCE_SPACE_KEY $GIT_BRANCH $REPO_URL $GIT_COMMIT"
   dependencies:
     - convert_documentation
   only:

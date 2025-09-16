@@ -75,7 +75,7 @@ mvn exec:java -Dexec.mainClass="ar.rou.converter.DocumentationConverter"
 
 ```bash
 mvn exec:java -Dexec.mainClass="ar.rou.confluence.ConfluenceUploader" \
-  -Dexec.args="<confluenceUrl> <username> <apiToken> <spaceKey>"
+  -Dexec.args="<confluenceUrl> <username> <apiToken> <spaceKey> <branchName> <repositoryUrl> <commitHash>"
 ```
 
 ## Structure des fichiers générés
@@ -99,6 +99,20 @@ converted/
     └── deployment.json
 ```
 
+## Fonctionnalités spéciales
+
+### Nom de page basé sur la branche Git
+Les pages Confluence sont automatiquement nommées selon le format :
+`<nom-de-branche> - <nom-du-document>`
+
+### Métadonnées automatiques
+Chaque page générée inclut en début de document (de manière discrète) :
+- L'URL du repository source
+- Le hash du commit courant 
+- La date et heure de génération
+
+Ces métadonnées permettent une traçabilité complète entre la documentation Confluence et le code source.
+
 ## Fonctionnalités implémentées
 
 ### StructurizrExporter
@@ -118,6 +132,8 @@ converted/
 - ✅ Création/mise à jour de pages Confluence
 - ✅ Support du format ADF
 - ✅ Authentification API Token
+- ✅ Nom de page basé sur la branche Git
+- ✅ Métadonnées automatiques (repo, commit, date de génération)
 
 ## Personnalisation
 
