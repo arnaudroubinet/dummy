@@ -1,0 +1,60 @@
+stages:
+  - export
+  - convert
+  - upload
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+  JAVA_TOOL_OPTIONS: "-Dfile.encoding=UTF-8"
+
+cache:
+  paths:
+    - .m2/repository/
+
+export_structurizr:
+  stage: export
+  image: openjdk:17-slim
+  before_script:
+    - apt-get update && apt-get install -y maven
+  script:
+    - mvn compile exec:java -Dexec.mainClass="ar.rou.structurizr.StructurizrExporter" 
+      -Dexec.args="$STRUCTURIZR_URL $STRUCTURIZR_API_KEY $STRUCTURIZR_API_SECRET $WORKSPACE_ID"
+  artifacts:
+    paths:
+      - exports/
+    expire_in: 1 hour
+  only:
+    - main
+    - develop
+
+convert_documentation:
+  stage: convert
+  image: openjdk:17-slim
+  before_script:
+    - apt-get update && apt-get install -y maven
+  script:
+    - mvn compile exec:java -Dexec.mainClass="ar.rou.converter.DocumentationConverter"
+  dependencies:
+    - export_structurizr
+  artifacts:
+    paths:
+      - exports/
+      - converted/
+    expire_in: 1 hour
+  only:
+    - main
+    - develop
+
+upload_confluence:
+  stage: upload
+  image: openjdk:17-slim
+  before_script:
+    - apt-get update && apt-get install -y maven
+  script:
+    - mvn compile exec:java -Dexec.mainClass="ar.rou.confluence.ConfluenceUploader"
+      -Dexec.args="$CONFLUENCE_URL $CONFLUENCE_USERNAME $CONFLUENCE_API_TOKEN $CONFLUENCE_SPACE_KEY"
+  dependencies:
+    - convert_documentation
+  only:
+    - main
+    - develop

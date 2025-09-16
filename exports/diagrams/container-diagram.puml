@@ -1,0 +1,22 @@
+@startuml
+!include <C4/C4_Container>
+
+LAYOUT_WITH_LEGEND()
+
+title Container Diagram
+
+Person(customer, "Customer", "System user")
+
+System_Boundary(system, "Main System") {
+    Container(web, "Web Application", "Java, Spring Boot", "Provides web interface")
+    Container(api, "API Gateway", "Java, Spring Boot", "Handles API requests")
+    Container(service, "Business Service", "Java, Spring Boot", "Core business logic")
+    ContainerDb(db, "Database", "PostgreSQL", "Stores business data")
+}
+
+Rel(customer, web, "Uses", "HTTPS")
+Rel(web, api, "Calls", "REST/JSON")
+Rel(api, service, "Invokes")
+Rel(service, db, "Reads/Writes", "JDBC")
+
+@enduml

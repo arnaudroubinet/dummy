@@ -1,0 +1,50 @@
+= System Architecture Documentation
+
+This document describes the architecture of our system as exported from Structurizr.
+
+== Overview
+
+The system follows a microservices architecture with clear separation of concerns.
+
+== System Context
+
+The system operates within the following context:
+
+* *Customers* interact with the system through web and mobile interfaces
+* *Administrators* manage the system through administrative interfaces
+* *External Systems* provide email and payment capabilities
+
+image::system-context.png[System Context Diagram]
+
+== Container Overview
+
+The system consists of the following containers:
+
+=== Web Application
+The web application provides the user interface for customers.
+
+=== API Gateway
+The API gateway handles all external API requests and provides:
+
+* Authentication and authorization
+* Rate limiting
+* Request routing
+
+=== Business Service
+The business service contains the core business logic.
+
+=== Database
+PostgreSQL database that stores all business data.
+
+image::container-diagram.png[Container Diagram]
+
+== Deployment
+
+The system is deployed using Docker containers orchestrated by Kubernetes.
+
+== Security Considerations
+
+* All communications use HTTPS/TLS
+* Authentication uses JWT tokens
+* Database connections are encrypted
+
