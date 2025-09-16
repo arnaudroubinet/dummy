@@ -24,6 +24,7 @@ public class StructurizrExporter {
     private static final String EXPORTS_DIR = "exports";
     private static final String DIAGRAMS_DIR = EXPORTS_DIR + "/diagrams";
     private static final String DOCS_DIR = EXPORTS_DIR + "/documentation";
+    private static final String HTML_DIR = DOCS_DIR + "/html";
     
     public static void main(String[] args) {
         if (args.length != 4) {
@@ -62,7 +63,7 @@ public class StructurizrExporter {
         
         // For demonstration, we'll create sample files
         exportSampleDiagrams();
-        exportSampleDocumentation();
+        exportSampleDocumentationAsHtml();
         
         System.out.println("Workspace exported successfully");
     }
@@ -70,6 +71,7 @@ public class StructurizrExporter {
     private void createDirectories() throws IOException {
         Files.createDirectories(Paths.get(DIAGRAMS_DIR));
         Files.createDirectories(Paths.get(DOCS_DIR));
+        Files.createDirectories(Paths.get(HTML_DIR));
     }
     
     private void exportSampleDiagrams() throws IOException {
@@ -119,62 +121,93 @@ public class StructurizrExporter {
         System.out.println("Sample diagrams created");
     }
     
-    private void exportSampleDocumentation() throws IOException {
-        System.out.println("Creating sample documentation...");
+    private void exportSampleDocumentationAsHtml() throws IOException {
+        System.out.println("Creating sample documentation as HTML (direct from Structurizr)...");
         
-        String architectureDoc = "= System Architecture Documentation\n\n" +
-                "This document describes the architecture of our system as exported from Structurizr.\n\n" +
-                "== Overview\n\n" +
-                "The system follows a microservices architecture with clear separation of concerns.\n\n" +
-                "== System Context\n\n" +
-                "The system operates within the following context:\n\n" +
-                "* *Customers* interact with the system through web and mobile interfaces\n" +
-                "* *Administrators* manage the system through administrative interfaces\n" +
-                "* *External Systems* provide email and payment capabilities\n\n" +
-                "image::system-context.png[System Context Diagram]\n\n" +
-                "== Container Overview\n\n" +
-                "The system consists of the following containers:\n\n" +
-                "=== Web Application\n" +
-                "The web application provides the user interface for customers.\n\n" +
-                "=== API Gateway\n" +
-                "The API gateway handles all external API requests and provides:\n\n" +
-                "* Authentication and authorization\n" +
-                "* Rate limiting\n" +
-                "* Request routing\n\n" +
-                "=== Business Service\n" +
-                "The business service contains the core business logic.\n\n" +
-                "=== Database\n" +
-                "PostgreSQL database that stores all business data.\n\n" +
-                "image::container-diagram.png[Container Diagram]\n\n" +
-                "== Deployment\n\n" +
-                "The system is deployed using Docker containers orchestrated by Kubernetes.\n\n" +
-                "== Security Considerations\n\n" +
-                "* All communications use HTTPS/TLS\n" +
-                "* Authentication uses JWT tokens\n" +
-                "* Database connections are encrypted\n\n";
+        // Simulate HTML export directly from Structurizr (in real implementation, this would come from Structurizr API)
+        String architectureHtml = "<!DOCTYPE html>\n" +
+                "<html lang=\"en\">\n" +
+                "<head>\n" +
+                "<meta charset=\"UTF-8\">\n" +
+                "<title>System Architecture Documentation</title>\n" +
+                "</head>\n" +
+                "<body>\n" +
+                "<h1>System Architecture Documentation</h1>\n" +
+                "<p>This document describes the architecture of our system as exported from Structurizr.</p>\n" +
+                "<h2>Overview</h2>\n" +
+                "<p>The system follows a microservices architecture with clear separation of concerns.</p>\n" +
+                "<h2>System Context</h2>\n" +
+                "<p>The system operates within the following context:</p>\n" +
+                "<ul>\n" +
+                "<li><strong>Customers</strong> interact with the system through web and mobile interfaces</li>\n" +
+                "<li><strong>Administrators</strong> manage the system through administrative interfaces</li>\n" +
+                "<li><strong>External Systems</strong> provide email and payment capabilities</li>\n" +
+                "</ul>\n" +
+                "<p><img src=\"system-context.png\" alt=\"System Context Diagram\" /></p>\n" +
+                "<h2>Container Overview</h2>\n" +
+                "<p>The system consists of the following containers:</p>\n" +
+                "<h3>Web Application</h3>\n" +
+                "<p>The web application provides the user interface for customers.</p>\n" +
+                "<h3>API Gateway</h3>\n" +
+                "<p>The API gateway handles all external API requests and provides:</p>\n" +
+                "<ul>\n" +
+                "<li>Authentication and authorization</li>\n" +
+                "<li>Rate limiting</li>\n" +
+                "<li>Request routing</li>\n" +
+                "</ul>\n" +
+                "<h3>Business Service</h3>\n" +
+                "<p>The business service contains the core business logic.</p>\n" +
+                "<h3>Database</h3>\n" +
+                "<p>PostgreSQL database that stores all business data.</p>\n" +
+                "<p><img src=\"container-diagram.png\" alt=\"Container Diagram\" /></p>\n" +
+                "<h2>Deployment</h2>\n" +
+                "<p>The system is deployed using Docker containers orchestrated by Kubernetes.</p>\n" +
+                "<h2>Security Considerations</h2>\n" +
+                "<ul>\n" +
+                "<li>All communications use HTTPS/TLS</li>\n" +
+                "<li>Authentication uses JWT tokens</li>\n" +
+                "<li>Database connections are encrypted</li>\n" +
+                "</ul>\n" +
+                "</body>\n" +
+                "</html>";
         
-        writeFile(Paths.get(DOCS_DIR, "architecture.adoc"), architectureDoc);
+        writeFile(Paths.get(HTML_DIR, "architecture.html"), architectureHtml);
         
-        String deploymentDoc = "= Deployment Guide\n\n" +
-                "This document describes how to deploy the system.\n\n" +
-                "== Prerequisites\n\n" +
-                "* Docker 20.10+\n" +
-                "* Kubernetes 1.21+\n" +
-                "* PostgreSQL 13+\n\n" +
-                "== Deployment Steps\n\n" +
-                ". Build the Docker images\n" +
-                ". Configure the environment variables\n" +
-                ". Deploy to Kubernetes\n" +
-                ". Verify the deployment\n\n" +
-                "== Configuration\n\n" +
-                "The following environment variables must be set:\n\n" +
-                "* `DATABASE_URL` - Database connection string\n" +
-                "* `JWT_SECRET` - Secret for JWT token signing\n" +
-                "* `EMAIL_API_KEY` - API key for email service\n\n";
+        String deploymentHtml = "<!DOCTYPE html>\n" +
+                "<html lang=\"en\">\n" +
+                "<head>\n" +
+                "<meta charset=\"UTF-8\">\n" +
+                "<title>Deployment Guide</title>\n" +
+                "</head>\n" +
+                "<body>\n" +
+                "<h1>Deployment Guide</h1>\n" +
+                "<p>This document describes how to deploy the system.</p>\n" +
+                "<h2>Prerequisites</h2>\n" +
+                "<ul>\n" +
+                "<li>Docker 20.10+</li>\n" +
+                "<li>Kubernetes 1.21+</li>\n" +
+                "<li>PostgreSQL 13+</li>\n" +
+                "</ul>\n" +
+                "<h2>Deployment Steps</h2>\n" +
+                "<ol>\n" +
+                "<li>Build the Docker images</li>\n" +
+                "<li>Configure the environment variables</li>\n" +
+                "<li>Deploy to Kubernetes</li>\n" +
+                "<li>Verify the deployment</li>\n" +
+                "</ol>\n" +
+                "<h2>Configuration</h2>\n" +
+                "<p>The following environment variables must be set:</p>\n" +
+                "<ul>\n" +
+                "<li><code>DATABASE_URL</code> - Database connection string</li>\n" +
+                "<li><code>JWT_SECRET</code> - Secret for JWT token signing</li>\n" +
+                "<li><code>EMAIL_API_KEY</code> - API key for email service</li>\n" +
+                "</ul>\n" +
+                "</body>\n" +
+                "</html>";
         
-        writeFile(Paths.get(DOCS_DIR, "deployment.adoc"), deploymentDoc);
+        writeFile(Paths.get(HTML_DIR, "deployment.html"), deploymentHtml);
         
-        System.out.println("Sample documentation created");
+        System.out.println("Sample HTML documentation created (direct from Structurizr)");
     }
     
     private void createPlantUMLConversionScript() throws IOException {

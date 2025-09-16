@@ -118,15 +118,15 @@ Ces métadonnées permettent une traçabilité complète entre la documentation 
 ### StructurizrExporter
 - ✅ Connexion à l'API Structurizr
 - ✅ Export des diagrammes (avec exemple PlantUML/C4)
-- ✅ Export de la documentation AsciiDoc
+- ✅ Export de la documentation HTML (direct depuis Structurizr)
 - ✅ Génération de script de conversion PlantUML vers PNG
 
 ### DocumentationConverter
-- ✅ Conversion AsciiDoc vers Markdown (via AsciiDoctor + Flexmark HTML2MD)
+- ✅ Conversion HTML vers Markdown (direct depuis Structurizr via Flexmark HTML2MD)
 - ✅ Conversion Markdown vers ADF
 - ✅ Support des éléments de base (headers, listes, emphasis, code)
 - ✅ Gestion des images et liens
-- ✅ Conversion robuste avec librairies spécialisées
+- ✅ Conversion optimisée sans étape intermédiaire AsciiDoc
 
 ### ConfluenceUploader
 - ✅ Upload d'attachments (diagrammes)

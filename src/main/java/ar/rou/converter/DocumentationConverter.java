@@ -1,8 +1,5 @@
 package ar.rou.converter;
 
-import org.asciidoctor.Asciidoctor;
-import org.asciidoctor.Options;
-import org.asciidoctor.SafeMode;
 import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
 
 import java.io.File;
@@ -11,18 +8,17 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
- * Converts AsciiDoc documentation to Markdown format.
- * This class processes AsciiDoc files exported from Structurizr
- * and converts them to Markdown for further processing.
+ * Converts HTML documentation to Markdown format.
+ * This class processes HTML files exported directly from Structurizr
+ * and converts them to Markdown for further processing to ADF format.
  */
 public class DocumentationConverter {
     
     private static final String EXPORTS_DIR = "exports";
     private static final String DOCS_DIR = EXPORTS_DIR + "/documentation";
+    private static final String HTML_DIR = DOCS_DIR + "/html";
     private static final String CONVERTED_DIR = "converted";
     private static final String MARKDOWN_DIR = CONVERTED_DIR + "/markdown";
     
@@ -47,24 +43,22 @@ public class DocumentationConverter {
         // Create output directories
         createDirectories();
         
-        // Process all AsciiDoc files
-        File docsDir = new File(DOCS_DIR);
-        if (!docsDir.exists() || !docsDir.isDirectory()) {
-            System.out.println("No documentation directory found at: " + DOCS_DIR);
+        // Process HTML files directly from Structurizr export
+        File htmlDir = new File(HTML_DIR);
+        if (!htmlDir.exists() || !htmlDir.isDirectory()) {
+            System.out.println("No HTML directory found at: " + HTML_DIR);
             return;
         }
         
-        File[] adocFiles = docsDir.listFiles((dir, name) -> name.endsWith(".adoc"));
-        if (adocFiles == null || adocFiles.length == 0) {
-            System.out.println("No AsciiDoc files found to convert");
+        File[] htmlFiles = htmlDir.listFiles((dir, name) -> name.endsWith(".html"));
+        if (htmlFiles == null || htmlFiles.length == 0) {
+            System.out.println("No HTML files found to convert");
             return;
         }
         
-        // Initialize AsciiDoctor
-        try (Asciidoctor asciidoctor = Asciidoctor.Factory.create()) {
-            for (File adocFile : adocFiles) {
-                convertAsciiDocToMarkdown(asciidoctor, adocFile);
-            }
+        // Process each HTML file
+        for (File htmlFile : htmlFiles) {
+            convertHtmlToMarkdown(htmlFile);
         }
     }
     
@@ -72,43 +66,17 @@ public class DocumentationConverter {
         Files.createDirectories(Paths.get(MARKDOWN_DIR));
     }
     
-    private void convertAsciiDocToMarkdown(Asciidoctor asciidoctor, File adocFile) throws IOException {
-        System.out.println("Converting: " + adocFile.getName());
+    private void convertHtmlToMarkdown(File htmlFile) throws IOException {
+        System.out.println("Converting HTML to Markdown: " + htmlFile.getName());
         
-        // Configure options for AsciiDoc to HTML conversion
-        Map<String, Object> attributes = new HashMap<>();
-        attributes.put("showtitle", true);
-        attributes.put("source-highlighter", "none"); // Disable syntax highlighting for cleaner HTML
-        attributes.put("sectanchors", false);
-        attributes.put("sectlinks", false);
-        
-        Options options = Options.builder()
-                .backend("html5")
-                .safe(SafeMode.UNSAFE)
-                .attributes(attributes)
-                .build();
-        
-        // Convert AsciiDoc to HTML using AsciiDoctor
-        String html;
-        try {
-            html = asciidoctor.convertFile(adocFile, options);
-            if (html != null && !html.trim().isEmpty()) {
-                System.out.println("Successfully converted AsciiDoc to HTML for " + adocFile.getName());
-            } else {
-                throw new RuntimeException("AsciiDoctor returned empty HTML");
-            }
-        } catch (Exception e) {
-            System.err.println("Error converting AsciiDoc to HTML: " + e.getMessage());
-            // Fallback to reading file directly and using simple conversion
-            String asciidocContent = Files.readString(adocFile.toPath());
-            html = convertAsciiDocToHtmlFallback(asciidocContent);
-        }
+        // Read HTML content directly from Structurizr export
+        String htmlContent = Files.readString(htmlFile.toPath());
         
         // Convert HTML to Markdown using Flexmark
-        String markdown = convertHtmlToMarkdownWithFlexmark(html);
+        String markdown = convertHtmlToMarkdownWithFlexmark(htmlContent);
         
         // Write markdown file
-        String outputFilename = adocFile.getName().replace(".adoc", ".md");
+        String outputFilename = htmlFile.getName().replace(".html", ".md");
         Path markdownPath = Paths.get(MARKDOWN_DIR, outputFilename);
         
         try (FileWriter writer = new FileWriter(markdownPath.toFile())) {
@@ -164,43 +132,6 @@ public class DocumentationConverter {
         markdown = markdown.trim();
         
         return markdown;
-    }
-    
-    /**
-     * Fallback method to convert AsciiDoc to basic HTML when AsciiDoctor fails
-     */
-    private String convertAsciiDocToHtmlFallback(String asciidoc) {
-        if (asciidoc == null || asciidoc.trim().isEmpty()) {
-            return "<html><body><p>No content available</p></body></html>";
-        }
-        
-        StringBuilder htmlBuilder = new StringBuilder("<html><body>");
-        
-        // Convert headers first
-        String processed = asciidoc;
-        processed = processed.replaceAll("(?m)^= (.+)$", "<h1>$1</h1>");
-        processed = processed.replaceAll("(?m)^== (.+)$", "<h2>$1</h2>");
-        processed = processed.replaceAll("(?m)^=== (.+)$", "<h3>$1</h3>");
-        processed = processed.replaceAll("(?m)^==== (.+)$", "<h4>$1</h4>");
-        processed = processed.replaceAll("(?m)^===== (.+)$", "<h5>$1</h5>");
-        
-        // Split into lines and process paragraphs
-        String[] lines = processed.split("\n");
-        
-        for (String line : lines) {
-            line = line.trim();
-            if (line.isEmpty()) {
-                continue;
-            }
-            if (!line.startsWith("<h") && !line.startsWith("*") && !line.startsWith(".")) {
-                htmlBuilder.append("<p>").append(line).append("</p>");
-            } else {
-                htmlBuilder.append(line);
-            }
-        }
-        
-        htmlBuilder.append("</body></html>");
-        return htmlBuilder.toString();
     }
     
     /**
