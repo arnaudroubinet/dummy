@@ -165,32 +165,33 @@ public class DocumentationConverter {
             return "";
         }
         
-        System.out.println("Converting AsciiDoc content of length: " + asciidoc.length());
+        String result = asciidoc;
         
         // Convert AsciiDoc headers to Markdown
-        asciidoc = asciidoc.replaceAll("(?m)^= (.+)$", "# $1");
-        asciidoc = asciidoc.replaceAll("(?m)^== (.+)$", "## $1");
-        asciidoc = asciidoc.replaceAll("(?m)^=== (.+)$", "### $1");
-        asciidoc = asciidoc.replaceAll("(?m)^==== (.+)$", "#### $1");
-        asciidoc = asciidoc.replaceAll("(?m)^===== (.+)$", "##### $1");
+        result = result.replaceAll("(?m)^= (.+)$", "# $1");
+        result = result.replaceAll("(?m)^== (.+)$", "## $1");
+        result = result.replaceAll("(?m)^=== (.+)$", "### $1");
+        result = result.replaceAll("(?m)^==== (.+)$", "#### $1");
+        result = result.replaceAll("(?m)^===== (.+)$", "##### $1");
         
-        // Convert emphasis
-        asciidoc = asciidoc.replaceAll("\\*\\*([^*]+)\\*\\*", "**$1**");
-        asciidoc = asciidoc.replaceAll("(?<!\\*)\\*([^*\\n]+)\\*(?!\\*)", "*$1*");
+        // Convert bold text (double asterisks)
+        result = result.replaceAll("\\*\\*([^*]+)\\*\\*", "**$1**");
+        
+        // Convert italic text (single asterisks) - simple version
+        result = result.replaceAll("\\*([^*\n]+)\\*", "*$1*");
         
         // Convert code blocks
-        asciidoc = asciidoc.replaceAll("(?s)----\\s*\\n(.*?)\\n----", "```\n$1\n```");
-        asciidoc = asciidoc.replaceAll("`([^`]+)`", "`$1`");
+        result = result.replaceAll("(?s)----\\s*\\n(.*?)\\n----", "```\n$1\n```");
+        result = result.replaceAll("`([^`]+)`", "`$1`");
         
         // Convert lists (basic)
-        asciidoc = asciidoc.replaceAll("(?m)^\\* (.+)$", "- $1");
-        asciidoc = asciidoc.replaceAll("(?m)^\\. (.+)$", "1. $1");
+        result = result.replaceAll("(?m)^\\* (.+)$", "- $1");
+        result = result.replaceAll("(?m)^\\. (.+)$", "1. $1");
         
         // Convert images
-        asciidoc = asciidoc.replaceAll("image::([^\\[]+)\\[([^\\]]*)\\]", "![$2]($1)");
+        result = result.replaceAll("image::([^\\[]+)\\[([^\\]]*)\\]", "![$2]($1)");
         
-        System.out.println("Converted markdown length: " + asciidoc.length());
-        return asciidoc;
+        return result;
     }
     
     // Test method for debugging
