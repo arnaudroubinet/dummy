@@ -3,6 +3,7 @@ package ar.rou.converter;
 import org.asciidoctor.Asciidoctor;
 import org.asciidoctor.Options;
 import org.asciidoctor.SafeMode;
+import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -74,13 +75,37 @@ public class DocumentationConverter {
     private void convertAsciiDocToMarkdown(Asciidoctor asciidoctor, File adocFile) throws IOException {
         System.out.println("Converting: " + adocFile.getName());
         
-        // Read the file content directly first
-        String asciidocContent = Files.readString(adocFile.toPath());
-        System.out.println("Read " + asciidocContent.length() + " characters from " + adocFile.getName());
+        // Configure options for AsciiDoc to HTML conversion
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("showtitle", true);
+        attributes.put("source-highlighter", "none"); // Disable syntax highlighting for cleaner HTML
+        attributes.put("sectanchors", false);
+        attributes.put("sectlinks", false);
         
-        // Convert directly from AsciiDoc to Markdown
-        String markdown = convertAsciiDocToMarkdownDirect(asciidocContent);
-        System.out.println("Converted to " + markdown.length() + " characters of markdown");
+        Options options = Options.builder()
+                .backend("html5")
+                .safe(SafeMode.UNSAFE)
+                .attributes(attributes)
+                .build();
+        
+        // Convert AsciiDoc to HTML using AsciiDoctor
+        String html;
+        try {
+            html = asciidoctor.convertFile(adocFile, options);
+            if (html != null && !html.trim().isEmpty()) {
+                System.out.println("Successfully converted AsciiDoc to HTML for " + adocFile.getName());
+            } else {
+                throw new RuntimeException("AsciiDoctor returned empty HTML");
+            }
+        } catch (Exception e) {
+            System.err.println("Error converting AsciiDoc to HTML: " + e.getMessage());
+            // Fallback to reading file directly and using simple conversion
+            String asciidocContent = Files.readString(adocFile.toPath());
+            html = convertAsciiDocToHtmlFallback(asciidocContent);
+        }
+        
+        // Convert HTML to Markdown using Flexmark
+        String markdown = convertHtmlToMarkdownWithFlexmark(html);
         
         // Write markdown file
         String outputFilename = adocFile.getName().replace(".adoc", ".md");
@@ -90,22 +115,101 @@ public class DocumentationConverter {
             writer.write(markdown);
         }
         
-        System.out.println("Converted to: " + outputFilename);
+        System.out.println("Converted to: " + outputFilename + " (" + markdown.length() + " characters)");
     }
     
     /**
-     * Simple HTML to Markdown converter.
-     * This is a basic implementation that handles common HTML elements.
-     * For production use, consider using a more robust library like flexmark-html2md-converter.
+     * Convert HTML to Markdown using Flexmark HTML to Markdown converter.
+     * This provides better and more reliable conversion than manual regex replacements.
      */
-    private String convertHtmlToMarkdown(String html) {
-        if (html == null) {
+    private String convertHtmlToMarkdownWithFlexmark(String html) {
+        if (html == null || html.trim().isEmpty()) {
             return "";
         }
         
-        // If the input doesn't look like HTML, treat it as AsciiDoc and convert directly
-        if (!html.contains("<html") && !html.contains("<body")) {
-            return convertAsciiDocToMarkdownDirect(html);
+        try {
+            // Use Flexmark's HTML to Markdown converter
+            FlexmarkHtmlConverter converter = FlexmarkHtmlConverter.builder().build();
+            String markdown = converter.convert(html);
+            
+            // If Flexmark produces empty result, use fallback
+            if (markdown == null || markdown.trim().isEmpty()) {
+                System.out.println("Flexmark conversion resulted in empty output, using fallback");
+                return convertHtmlToMarkdownSimple(html);
+            }
+            
+            // Clean up the markdown output
+            markdown = cleanMarkdownOutput(markdown);
+            
+            return markdown;
+        } catch (Exception e) {
+            System.err.println("Error converting HTML to Markdown with Flexmark: " + e.getMessage());
+            // Fallback to simple conversion if Flexmark fails
+            return convertHtmlToMarkdownSimple(html);
+        }
+    }
+    
+    /**
+     * Clean up the markdown output from Flexmark conversion
+     */
+    private String cleanMarkdownOutput(String markdown) {
+        if (markdown == null) {
+            return "";
+        }
+        
+        // Remove extra empty lines
+        markdown = markdown.replaceAll("\\n{3,}", "\n\n");
+        
+        // Trim leading and trailing whitespace
+        markdown = markdown.trim();
+        
+        return markdown;
+    }
+    
+    /**
+     * Fallback method to convert AsciiDoc to basic HTML when AsciiDoctor fails
+     */
+    private String convertAsciiDocToHtmlFallback(String asciidoc) {
+        if (asciidoc == null || asciidoc.trim().isEmpty()) {
+            return "<html><body><p>No content available</p></body></html>";
+        }
+        
+        StringBuilder htmlBuilder = new StringBuilder("<html><body>");
+        
+        // Convert headers first
+        String processed = asciidoc;
+        processed = processed.replaceAll("(?m)^= (.+)$", "<h1>$1</h1>");
+        processed = processed.replaceAll("(?m)^== (.+)$", "<h2>$1</h2>");
+        processed = processed.replaceAll("(?m)^=== (.+)$", "<h3>$1</h3>");
+        processed = processed.replaceAll("(?m)^==== (.+)$", "<h4>$1</h4>");
+        processed = processed.replaceAll("(?m)^===== (.+)$", "<h5>$1</h5>");
+        
+        // Split into lines and process paragraphs
+        String[] lines = processed.split("\n");
+        
+        for (String line : lines) {
+            line = line.trim();
+            if (line.isEmpty()) {
+                continue;
+            }
+            if (!line.startsWith("<h") && !line.startsWith("*") && !line.startsWith(".")) {
+                htmlBuilder.append("<p>").append(line).append("</p>");
+            } else {
+                htmlBuilder.append(line);
+            }
+        }
+        
+        htmlBuilder.append("</body></html>");
+        return htmlBuilder.toString();
+    }
+    
+    /**
+     * Simple HTML to Markdown converter as fallback.
+     * This is kept as backup in case Flexmark conversion fails.
+     */
+    private String convertHtmlToMarkdownSimple(String html) {
+        if (html == null) {
+            return "";
         }
         
         // Remove HTML document structure
@@ -155,47 +259,5 @@ public class DocumentationConverter {
         html = html.trim();
         
         return html;
-    }
-    
-    /**
-     * Direct AsciiDoc to Markdown conversion for simple cases
-     */
-    private String convertAsciiDocToMarkdownDirect(String asciidoc) {
-        if (asciidoc == null || asciidoc.trim().isEmpty()) {
-            return "";
-        }
-        
-        String result = asciidoc;
-        
-        // Convert AsciiDoc headers to Markdown
-        result = result.replaceAll("(?m)^= (.+)$", "# $1");
-        result = result.replaceAll("(?m)^== (.+)$", "## $1");
-        result = result.replaceAll("(?m)^=== (.+)$", "### $1");
-        result = result.replaceAll("(?m)^==== (.+)$", "#### $1");
-        result = result.replaceAll("(?m)^===== (.+)$", "##### $1");
-        
-        // Convert bold text (double asterisks)
-        result = result.replaceAll("\\*\\*([^*]+)\\*\\*", "**$1**");
-        
-        // Convert italic text (single asterisks) - simple version
-        result = result.replaceAll("\\*([^*\n]+)\\*", "*$1*");
-        
-        // Convert code blocks
-        result = result.replaceAll("(?s)----\\s*\\n(.*?)\\n----", "```\n$1\n```");
-        result = result.replaceAll("`([^`]+)`", "`$1`");
-        
-        // Convert lists (basic)
-        result = result.replaceAll("(?m)^\\* (.+)$", "- $1");
-        result = result.replaceAll("(?m)^\\. (.+)$", "1. $1");
-        
-        // Convert images
-        result = result.replaceAll("image::([^\\[]+)\\[([^\\]]*)\\]", "![$2]($1)");
-        
-        return result;
-    }
-    
-    // Test method for debugging
-    public String testConvertAsciiDocToMarkdownDirect(String asciidoc) {
-        return convertAsciiDocToMarkdownDirect(asciidoc);
     }
 }

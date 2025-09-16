@@ -122,10 +122,11 @@ Ces métadonnées permettent une traçabilité complète entre la documentation 
 - ✅ Génération de script de conversion PlantUML vers PNG
 
 ### DocumentationConverter
-- ✅ Conversion AsciiDoc vers Markdown
+- ✅ Conversion AsciiDoc vers Markdown (via AsciiDoctor + Flexmark HTML2MD)
 - ✅ Conversion Markdown vers ADF
 - ✅ Support des éléments de base (headers, listes, emphasis, code)
 - ✅ Gestion des images et liens
+- ✅ Conversion robuste avec librairies spécialisées
 
 ### ConfluenceUploader
 - ✅ Upload d'attachments (diagrammes)
