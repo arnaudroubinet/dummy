@@ -4,6 +4,7 @@ public class User {
     private Long id;
     private String name;
     private String email;
+    private String nickname;
 
     public User() {
     }
@@ -12,6 +13,14 @@ public class User {
         this.id = id;
         this.name = name;
         this.email = email;
+        this.nickname = null; // Optional field
+    }
+    
+    public User(Long id, String name, String email, String nickname) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.nickname = nickname;
     }
 
     public Long getId() {
@@ -36,5 +45,13 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+    
+    public String getNickname() {
+        return nickname;
+    }
+    
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 }
